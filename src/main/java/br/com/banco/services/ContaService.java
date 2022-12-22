@@ -3,7 +3,9 @@ package br.com.banco.services;
 
 import br.com.banco.dtos.ContaDTO;
 import br.com.banco.dtos.SaldoTotalPorPeriodoDTO;
+import br.com.banco.dtos.TransferenciaDTO;
 import br.com.banco.entities.Conta;
+import br.com.banco.entities.Transferencia;
 import br.com.banco.projection.TotalTransferenciaContaProjection;
 import br.com.banco.repositories.ContaRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +31,19 @@ public class ContaService {
     Page<Conta> contas = contaRepository.findAll(pageable);
     return contas.map(ContaDTO::new);
   }
+
+  @Transactional(readOnly = true)
+  public List<TransferenciaDTO> buscarContaComTransferenciasPorPeriodo(Long id, String minDate, String maxDate) {
+    Conta contaEntity = contaRepository.findById(id).get();
+    List<Transferencia> transferencias = contaEntity.getTransferencias();
+    LocalDate today = LocalDate.ofInstant(Instant.now(), ZoneId.systemDefault());
+    LocalDate min = minDate.equals("") ? today.minusDays(2190) : LocalDate.parse(minDate);
+    LocalDate max = maxDate.equals("") ? today : LocalDate.parse(maxDate);
+    return transferencias.stream().filter(x -> x.getDataTransferencia().isAfter(min) &&
+                    x.getDataTransferencia().isBefore(max))
+            .map(TransferenciaDTO::new).collect(Collectors.toList());
+  }
+
 
   @Transactional(readOnly = true)
   public SaldoTotalPorPeriodoDTO buscarContaComSaldoTotalPorPeriodo(Long id, String minDate, String maxDate) {
