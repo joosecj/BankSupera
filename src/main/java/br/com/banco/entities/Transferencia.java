@@ -8,9 +8,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
-@NoArgsConstructor
+import java.time.Instant;
+import java.time.LocalDate;
+
 @AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
 @Entity
@@ -21,7 +23,7 @@ public class Transferencia {
   private Long id;
   @NotNull
   @Column(columnDefinition = "TIMESTAMP WITH TIME ZONE")
-  private LocalDateTime dataTransferencia;
+  private LocalDate dataTransferencia;
   @NotNull
   private Double valor;
   @NotNull
@@ -30,7 +32,7 @@ public class Transferencia {
   private TransferenciaTipo tipo;
   @Column(length = 50)
   private String nomeOperadorTransacao;
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "conta_id")
   private Conta conta;
 
