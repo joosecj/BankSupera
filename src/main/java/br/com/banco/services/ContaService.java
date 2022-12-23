@@ -43,11 +43,16 @@ public class ContaService {
   }
 
   @Transactional(readOnly = true)
-  public SaldoTotalPorPeriodoDTO buscarContaComSaldoTotalPorPeriodo(Long id, String minDate, String maxDate) {
+  public SaldoTotalPorPeriodoDTO buscarContaComSaldoTotalPorPeriodo(Long id, String minDate, String maxDate, String operador) {
     LocalDate today = LocalDate.ofInstant(Instant.now(), ZoneId.systemDefault());
     LocalDate min = minDate.equals("") ? today.minusDays(2190) : LocalDate.parse(minDate);
     LocalDate max = maxDate.equals("") ? today : LocalDate.parse(maxDate);
-    TotalTransferenciaContaProjection totalContaPro = contaRepository.buscarValorTotalEmContaOuPeriodo(id, min, max);
+    TotalTransferenciaContaProjection totalContaPro = null;
+    if (operador.isEmpty()) {
+      totalContaPro = contaRepository.buscarValorTotalEmContaOuPeriodo(id, min, max);
+    } else {
+      totalContaPro = contaRepository.buscarValorTotalEmContaPeriodoPorOperador(id, min, max, operador);
+    }
     return new SaldoTotalPorPeriodoDTO(totalContaPro);
   }
 

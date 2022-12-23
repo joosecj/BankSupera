@@ -38,8 +38,10 @@ public class ContaController {
                                                                    @RequestParam(value = "minDate", defaultValue = "")
                                                                    String minDate,
                                                                    @RequestParam(value = "maxDate", defaultValue = "")
-                                                                   String maxDate) {
-    SaldoTotalPorPeriodoDTO saldoTotalPorPeriodoDTO = contaService.buscarContaComSaldoTotalPorPeriodo(id, minDate, maxDate);
+                                                                   String maxDate,
+                                                                   @RequestParam(value = "operador", defaultValue = "")
+                                                                   String operador) {
+    SaldoTotalPorPeriodoDTO saldoTotalPorPeriodoDTO = contaService.buscarContaComSaldoTotalPorPeriodo(id, minDate, maxDate, operador);
     return ResponseEntity.ok(saldoTotalPorPeriodoDTO);
   }
 
