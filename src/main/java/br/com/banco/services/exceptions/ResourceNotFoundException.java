@@ -1,2 +1,7 @@
-package br.com.banco.services.exceptions;public class ResourceNotFoundException {
+package br.com.banco.services.exceptions;
+
+public class ResourceNotFoundException extends RuntimeException{
+  public ResourceNotFoundException(String message) {
+    super(message);
+  }
 }
