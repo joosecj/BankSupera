@@ -25,4 +25,5 @@ public class TransferenciaDTO {
     tipo = transferenciaEntity.getTipo();
     nomeOperadorTransacao = transferenciaEntity.getNomeOperadorTransacao();
   }
+
 }

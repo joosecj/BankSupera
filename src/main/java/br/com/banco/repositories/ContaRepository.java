@@ -1,12 +1,31 @@
 package br.com.banco.repositories;
 
+import br.com.banco.dtos.TransferenciaDTO;
 import br.com.banco.entities.Conta;
 import br.com.banco.projection.TotalTransferenciaContaProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
+
 public interface ContaRepository extends JpaRepository<Conta, Long> {
+
+  @Query( value =
+          "SELECT new br.com.banco.dtos.TransferenciaDTO(t.id, t.dataTransferencia, t.valor, t.tipo, t.nomeOperadorTransacao)  " +
+                  "FROM Conta c, Transferencia t " +
+                  "WHERE c.idConta = :id AND c.idConta = t.conta.idConta " +
+                  "AND t.dataTransferencia BETWEEN :min AND :max ")
+  Page<TransferenciaDTO> buscarContaPorTransacoesPeriodo(Long id, LocalDate min, LocalDate max, Pageable pageable);
+
+  @Query( value =
+          "SELECT new br.com.banco.dtos.TransferenciaDTO(t.id, t.dataTransferencia, t.valor, t.tipo, t.nomeOperadorTransacao)  " +
+                  "FROM Conta c, Transferencia t " +
+                  "WHERE c.idConta = :id AND c.idConta = t.conta.idConta " +
+                  "AND t.dataTransferencia BETWEEN :min AND :max " +
+                  "AND UPPER(t.nomeOperadorTransacao) LIKE UPPER(CONCAT('%', :operador, '%')) " )
+  Page<TransferenciaDTO> buscarContaPorTransacoesOperador(Long id, LocalDate min, LocalDate max, String operador, Pageable pageable);
 
   @Query(nativeQuery = true, value =
           " WITH contaMovimentacao AS ( " +
@@ -21,10 +40,10 @@ public interface ContaRepository extends JpaRepository<Conta, Long> {
                   "    WHERE cm.data_transferencia BETWEEN :min AND :max " +
                   "), sumMovimentacao as ( " +
                   "SELECT ROUND(SUM(cm.valor), 2) AS somatoria " +
-                  "FROM contaMovimentacao cm " +
+                  "   FROM contaMovimentacao cm " +
                   "), sumMovimentacaoDatas as ( " +
                   "SELECT ROUND(SUM(cmd.valor), 2) AS somatoriaData " +
-                  "FROM contaMovimentacaoDatas cmd " +
+                  "   FROM contaMovimentacaoDatas cmd " +
                   ")SELECT sm.somatoria AS somatoria, smd.somatoriaData AS somatoriaData FROM sumMovimentacao sm " +
                   "JOIN sumMovimentacaoDatas smd ")
   TotalTransferenciaContaProjection buscarValorTotalEmContaOuPeriodo(Long id, LocalDate min, LocalDate max);
