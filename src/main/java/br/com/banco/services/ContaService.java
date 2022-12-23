@@ -7,6 +7,7 @@ import br.com.banco.dtos.TransferenciaDTO;
 import br.com.banco.entities.Conta;
 import br.com.banco.projection.TotalTransferenciaContaProjection;
 import br.com.banco.repositories.ContaRepository;
+import br.com.banco.services.exceptions.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 
 @Service
 @RequiredArgsConstructor
@@ -32,28 +34,32 @@ public class ContaService {
   @Transactional(readOnly = true)
   public Page<TransferenciaDTO> buscarContaComTransferenciasPorPeriodos(Long id, String minDate, String maxDate,
                                                                         String operador, Pageable pageable) {
-    LocalDate today = LocalDate.ofInstant(Instant.now(), ZoneId.systemDefault());
-    LocalDate min = minDate.equals("") ? today.minusDays(2190) : LocalDate.parse(minDate);
-    LocalDate max = maxDate.equals("") ? today : LocalDate.parse(maxDate);
-    if (operador.isEmpty()) {
-      return contaRepository.buscarContaPorTransacoesPeriodo(id, min, max, pageable);
-    } else {
-      return contaRepository.buscarContaPorTransacoesOperador(id, min, max, operador, pageable);
-    }
+    Page<TransferenciaDTO> transferenciaDTOPage = operador.isEmpty()
+            ? contaRepository.buscarContaPorTransacoesPeriodo(id, tratarDataMin(minDate), tratarDataMax(maxDate), pageable)
+            : contaRepository.buscarContaPorTransacoesOperador(id, tratarDataMin(minDate), tratarDataMax(maxDate), operador, pageable);
+    return transferenciaDTOPage;
   }
 
   @Transactional(readOnly = true)
   public SaldoTotalPorPeriodoDTO buscarContaComSaldoTotalPorPeriodo(Long id, String minDate, String maxDate, String operador) {
-    LocalDate today = LocalDate.ofInstant(Instant.now(), ZoneId.systemDefault());
-    LocalDate min = minDate.equals("") ? today.minusDays(2190) : LocalDate.parse(minDate);
-    LocalDate max = maxDate.equals("") ? today : LocalDate.parse(maxDate);
-    TotalTransferenciaContaProjection totalContaPro = null;
-    if (operador.isEmpty()) {
-      totalContaPro = contaRepository.buscarValorTotalEmContaOuPeriodo(id, min, max);
-    } else {
-      totalContaPro = contaRepository.buscarValorTotalEmContaPeriodoPorOperador(id, min, max, operador);
+    try {
+      TotalTransferenciaContaProjection totalContaPro = operador.isEmpty()
+              ? contaRepository.buscarValorTotalEmContaOuPeriodo(id, tratarDataMin(minDate), tratarDataMax(maxDate))
+              : contaRepository.buscarValorTotalEmContaPeriodoPorOperador(id, tratarDataMin(minDate), tratarDataMax(maxDate), operador);
+      return new SaldoTotalPorPeriodoDTO(totalContaPro);
+    } catch (DateTimeParseException e) {
+      throw new ResourceNotFoundException("Datas inválidas");
     }
-    return new SaldoTotalPorPeriodoDTO(totalContaPro);
+  }
+
+  private LocalDate tratarDataMin(String minDate) {
+    LocalDate today = LocalDate.ofInstant(Instant.now(), ZoneId.systemDefault());
+    return minDate.equals("") ? today.minusDays(2190) : LocalDate.parse(minDate);
+  }
+
+  private LocalDate tratarDataMax(String maxDate) {
+    LocalDate today = LocalDate.ofInstant(Instant.now(), ZoneId.systemDefault());
+    return maxDate.equals("") ? today : LocalDate.parse(maxDate);
   }
 
 }
